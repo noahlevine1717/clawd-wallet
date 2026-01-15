@@ -1,0 +1,53 @@
+{
+  "name": "@clawd/x402-wallet-mcp",
+  "version": "0.1.0",
+  "description": "CLAWD Wallet - Claude's Lightweight Autonomous Wallet for Developers. Terminal-native x402 payment wallet for Base USDC.",
+  "main": "./dist/mcp-server/index.js",
+  "bin": {
+    "clawd": "./dist/cli/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --test",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "x402",
+    "mcp",
+    "wallet",
+    "claude",
+    "payments",
+    "base",
+    "usdc",
+    "cryptocurrency",
+    "terminal",
+    "cli"
+  ],
+  "author": "CLAWD Contributors",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clawd/x402-wallet-mcp.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "ethers": "^6.13.0",
+    "keytar": "^7.9.0",
+    "commander": "^12.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.0",
+    "inquirer": "^10.0.0",
+    "zod": "^3.22.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/inquirer": "^9.0.7",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
