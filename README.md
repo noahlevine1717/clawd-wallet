@@ -309,6 +309,60 @@ Security settings in `~/.clawd/config.json`:
 - **Audit log**: `~/.clawd/audit.log`
 - **Claude Code config**: `~/.claude/config.json`
 
+## Advanced Configuration
+
+### Custom x402 Service Registry
+
+By default, CLAWD uses the public x402scan registry at `https://api.x402scan.com` to discover available services. This registry is open and community-maintained.
+
+**To use a custom or self-hosted registry:**
+
+```bash
+# Set registry URL
+export X402_REGISTRY_URL=https://your-registry.com
+
+# Verify it's working
+clawd discover
+```
+
+**Make it permanent:**
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+echo 'export X402_REGISTRY_URL=https://your-registry.com' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Fallback behavior:**
+- If the registry API is unavailable, CLAWD falls back to built-in services
+- Timeout is 5 seconds per request
+- Warnings are logged but the wallet continues to function
+
+**Registry API Endpoints:**
+Your custom registry should implement:
+- `GET /services?query={query}&category={category}` - List services
+- `GET /categories` - List available categories
+- `GET /services?url={url}` - Get service by URL
+
+**Use cases for custom registry:**
+- Enterprise: Internal service catalog
+- Development: Testing new services before public listing
+- Privacy: Self-hosted registry for private infrastructure
+- Regional: Localized service discovery
+
+### Environment Variables
+
+All available environment variables:
+
+```bash
+# Registry configuration
+X402_REGISTRY_URL=https://api.x402scan.com  # Default registry
+
+# Wallet configuration
+CLAWD_CONFIG_DIR=~/.clawd                   # Config directory
+CLAWD_LOG_LEVEL=info                        # Log level (debug|info|warn|error)
+```
+
 ## Differentiation from Coinbase Payments MCP
 
 | Feature | Coinbase Payments MCP | CLAWD Wallet |
