@@ -8,7 +8,9 @@ import type { BalanceInfo } from '../types/index.js';
 const USDC_ABI = [
   'function balanceOf(address owner) view returns (uint256)',
   'function decimals() view returns (uint8)',
-  'function symbol() view returns (string)'
+  'function symbol() view returns (string)',
+  'function transfer(address to, uint256 amount) returns (bool)',
+  'function approve(address spender, uint256 amount) returns (bool)'
 ];
 
 export class BalanceChecker {
@@ -62,6 +64,43 @@ export class BalanceChecker {
       return parseFloat(balance.balance) >= requiredAmount;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * Transfer USDC to a recipient
+   * Returns the transaction hash
+   */
+  async transferUSDC(
+    wallet: ethers.HDNodeWallet | ethers.Wallet,
+    recipient: string,
+    amount: number
+  ): Promise<{ txHash: string; amount: string }> {
+    try {
+      // Connect the wallet to the provider
+      const connectedWallet = wallet.connect(this.provider);
+
+      // Get decimals (USDC uses 6)
+      const decimals = await this.usdcContract.decimals();
+
+      // Convert amount to smallest unit
+      const amountInUnits = ethers.parseUnits(amount.toString(), decimals);
+
+      // Create contract instance with signer
+      const contractWithSigner = this.usdcContract.connect(connectedWallet) as ethers.Contract;
+
+      // Execute transfer
+      const tx = await contractWithSigner.transfer(recipient, amountInUnits);
+
+      // Wait for confirmation
+      const receipt = await tx.wait();
+
+      return {
+        txHash: receipt.hash,
+        amount: amount.toString()
+      };
+    } catch (error) {
+      throw new Error(`USDC transfer failed: ${(error as Error).message}`);
     }
   }
 }

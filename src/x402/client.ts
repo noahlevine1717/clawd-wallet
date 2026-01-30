@@ -109,8 +109,13 @@ export class X402Client {
     amount: string,
     currency: string,
     nonce: string,
-    signature: string
+    signature: string,
+    txHash?: string
   ): string {
-    return `x402 payer="${payer}", recipient="${recipient}", amount="${amount}", currency="${currency}", nonce="${nonce}", signature="${signature}"`;
+    let header = `x402 payer="${payer}", recipient="${recipient}", amount="${amount}", currency="${currency}", nonce="${nonce}", signature="${signature}"`;
+    if (txHash) {
+      header += `, tx_hash="${txHash}"`;
+    }
+    return header;
   }
 }

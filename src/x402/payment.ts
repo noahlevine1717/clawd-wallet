@@ -40,7 +40,7 @@ export class PaymentHandler {
     method: string = 'GET',
     body?: string,
     description?: string
-  ): Promise<{ success: boolean; response?: any; error?: string }> {
+  ): Promise<{ success: boolean; response?: any; error?: string; txHash?: string }> {
     try {
       // Step 1: Make initial request
       const initialResponse = await X402Client.makeRequest(url, { method, body });
@@ -98,21 +98,33 @@ export class PaymentHandler {
         nonce: paymentInfo.nonce
       };
 
-      // Step 7: Generate payment proof
+      // Step 7: Get wallet and generate signature
       const wallet = this.walletManager.getWallet();
       const signature = await X402Client.generatePaymentProof(wallet, paymentDetails);
 
-      // Step 8: Create authorization header
+      // Step 8: Execute on-chain USDC transfer
+      if (!this.balanceChecker) {
+        throw new Error('Payment handler not initialized');
+      }
+
+      const transferResult = await this.balanceChecker.transferUSDC(
+        wallet,
+        paymentDetails.recipient,
+        amount
+      );
+
+      // Step 9: Create authorization header with tx_hash
       const authHeader = X402Client.createAuthorizationHeader(
         wallet.address,
         paymentDetails.recipient,
         paymentInfo.amount,
         paymentDetails.currency,
         paymentDetails.nonce,
-        signature
+        signature,
+        transferResult.txHash  // Include tx_hash for on-chain verification
       );
 
-      // Step 9: Retry request with payment proof
+      // Step 10: Retry request with payment proof and tx_hash
       const paymentResponse = await X402Client.makeRequest(url, {
         method,
         body,
@@ -121,10 +133,10 @@ export class PaymentHandler {
         }
       });
 
-      // Step 10: Log transaction
+      // Step 11: Log transaction
       if (paymentResponse.status === 200) {
         const transaction: Transaction = {
-          id: ethers.hexlify(ethers.randomBytes(16)),
+          id: transferResult.txHash,  // Use actual tx_hash as ID
           timestamp: Date.now(),
           service: new URL(url).hostname,
           description: paymentDetails.description,
@@ -137,11 +149,13 @@ export class PaymentHandler {
         await AuditLogger.logAction('payment_executed', {
           url,
           amount,
+          txHash: transferResult.txHash,
           service: transaction.service
         });
 
         return {
           success: true,
+          txHash: transferResult.txHash,
           response: paymentResponse.body ? JSON.parse(paymentResponse.body) : null
         };
       }
