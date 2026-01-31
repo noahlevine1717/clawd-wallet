@@ -77,6 +77,29 @@ export class BalanceChecker {
     amount: number
   ): Promise<{ txHash: string; amount: string }> {
     try {
+      // Validate recipient address
+      if (!recipient || typeof recipient !== 'string') {
+        throw new Error('Invalid recipient: address is required');
+      }
+
+      // Validate and checksum the address (throws if invalid)
+      let checksummedRecipient: string;
+      try {
+        checksummedRecipient = ethers.getAddress(recipient);
+      } catch {
+        throw new Error(`Invalid recipient address: ${recipient}`);
+      }
+
+      // Prevent sending to zero address
+      if (checksummedRecipient === ethers.ZeroAddress) {
+        throw new Error('Cannot send to zero address');
+      }
+
+      // Validate amount
+      if (amount <= 0) {
+        throw new Error('Amount must be greater than zero');
+      }
+
       // Connect the wallet to the provider
       const connectedWallet = wallet.connect(this.provider);
 
@@ -89,8 +112,8 @@ export class BalanceChecker {
       // Create contract instance with signer
       const contractWithSigner = this.usdcContract.connect(connectedWallet) as ethers.Contract;
 
-      // Execute transfer
-      const tx = await contractWithSigner.transfer(recipient, amountInUnits);
+      // Execute transfer (use checksummed address)
+      const tx = await contractWithSigner.transfer(checksummedRecipient, amountInUnits);
 
       // Wait for confirmation
       const receipt = await tx.wait();
